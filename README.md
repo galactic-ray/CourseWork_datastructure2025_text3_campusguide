@@ -29,19 +29,29 @@
 
 ## 编译方法
 
-### 方法1：使用qmake（推荐）
+### 方法1：使用编译脚本（推荐）
 
 ```bash
-qmake CampusGuide.pro
+./build.sh
+```
+
+脚本会自动检测并使用qmake或CMake进行编译，编译输出在 `build/` 目录。
+
+### 方法2：使用qmake
+
+```bash
+mkdir -p build
+cd build
+qmake ../CampusGuide.pro
 make
 ```
 
 或者使用Qt Creator打开 `CampusGuide.pro` 文件，然后点击"构建"。
 
-### 方法2：使用CMake
+### 方法3：使用CMake
 
 ```bash
-mkdir build
+mkdir -p build
 cd build
 cmake ..
 make
@@ -52,10 +62,13 @@ make
 编译完成后，运行生成的可执行文件：
 
 ```bash
+cd build
 ./CampusGuide
 ```
 
 或者在Qt Creator中直接点击"运行"。
+
+**注意**：程序会在项目根目录的 `data/` 目录下查找和保存CSV文件。如果 `data/` 目录不存在，程序会自动创建。
 
 ## 使用说明
 
@@ -94,15 +107,39 @@ make
    - 点击图形界面中的景点，可以自动填充相关输入框
    - 点击"清除路径显示"可以清除当前显示的路径
 
+## 项目结构
+
+```
+project/
+├── src/                    # 源代码目录
+│   ├── main_gui.cpp        # 程序入口
+│   ├── mainwindow.cpp      # 主窗口实现
+│   ├── mainwindow.h        # 主窗口头文件
+│   ├── graph.cpp           # 图数据结构实现
+│   ├── graph.h             # 图数据结构头文件
+│   ├── graphwidget.cpp     # 图形显示组件实现
+│   └── graphwidget.h       # 图形显示组件头文件
+├── data/                   # 数据文件目录（CSV文件）
+│   └── graph_xy.csv        # 校园图数据（自动生成）
+├── build/                  # 编译输出目录（自动生成）
+├── CMakeLists.txt          # CMake构建文件
+├── CampusGuide.pro         # Qt项目文件
+├── build.sh                # 编译脚本
+├── README.md               # 说明文档
+├── .gitignore              # Git忽略文件
+└── 3.cpp                   # 原始命令行版本（保留作为参考）
+```
+
 ## 文件说明
 
-- `graph.h` / `graph.cpp`：图数据结构和算法实现
-- `graphwidget.h` / `graphwidget.cpp`：图形显示组件
-- `mainwindow.h` / `mainwindow.cpp`：主窗口和界面逻辑
-- `main.cpp`：程序入口
+- `src/graph.h` / `src/graph.cpp`：图数据结构和算法实现
+- `src/graphwidget.h` / `src/graphwidget.cpp`：图形显示组件
+- `src/mainwindow.h` / `src/mainwindow.cpp`：主窗口和界面逻辑
+- `src/main_gui.cpp`：程序入口
 - `CampusGuide.pro`：Qt项目文件
 - `CMakeLists.txt`：CMake构建文件
-- `3.cpp`：原始命令行版本（保留作为参考）
+- `data/`：数据文件目录，存放CSV格式的校园图数据
+- `build/`：编译输出目录
 
 ## 数据格式
 
@@ -124,7 +161,9 @@ E,,,,,1,2
 
 - 坐标单位是米
 - 道路距离根据坐标自动计算（欧氏距离）
-- 程序启动时会自动尝试加载 `graph_xy.csv` 文件
+- 程序启动时会自动尝试从 `data/` 目录加载 `graph_xy.csv` 文件
+- 如果 `data/` 目录中文件不存在，会尝试从当前目录加载（向后兼容）
 - 如果文件不存在，会尝试加载旧版格式的 `graph.csv` 文件
+- 默认保存路径为 `data/graph_xy.csv`，如果 `data/` 目录不存在会自动创建
 
 # CourseWork_datastructure2025_text3_campusguide

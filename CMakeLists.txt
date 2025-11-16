@@ -15,16 +15,16 @@ if(NOT Qt6_FOUND)
 endif()
 
 set(SOURCES
-    main.cpp
-    graph.cpp
-    mainwindow.cpp
-    graphwidget.cpp
+    src/main_gui.cpp
+    src/graph.cpp
+    src/mainwindow.cpp
+    src/graphwidget.cpp
 )
 
 set(HEADERS
-    graph.h
-    mainwindow.h
-    graphwidget.h
+    src/graph.h
+    src/mainwindow.h
+    src/graphwidget.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})

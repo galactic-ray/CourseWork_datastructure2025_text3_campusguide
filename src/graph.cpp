@@ -5,6 +5,12 @@
 #include <queue>
 #include <algorithm>
 #include <cmath>
+#include <sys/stat.h>
+#include <sys/types.h>
+#ifdef _WIN32
+#include <direct.h>
+#define mkdir(dir, mode) _mkdir(dir)
+#endif
 
 // Graph类实现
 void Graph::clear() {
@@ -305,6 +311,19 @@ static std::vector<std::string> parseCsvLine(const std::string& line) {
     return f;
 }
 
+// 获取数据文件路径的辅助函数
+static std::string getDataPath(const std::string& filename) {
+    // 尝试从data目录加载
+    std::string dataPath = "data/" + filename;
+    std::ifstream test(dataPath);
+    if (test.good()) {
+        test.close();
+        return dataPath;
+    }
+    // 如果data目录不存在，尝试当前目录（向后兼容）
+    return filename;
+}
+
 static const std::string FILE_NEW = "graph_xy.csv";
 static const std::string FILE_OLD = "graph.csv";
 
@@ -315,7 +334,17 @@ size_t countEdges(const Graph& g) {
 }
 
 bool saveGraphCSV(const Graph& g, const std::string& file) {
-    std::ofstream out(file, std::ios::trunc);
+    std::string filepath = file;
+    if (filepath.empty()) {
+        // 默认保存到data目录，如果目录不存在则创建
+        struct stat info;
+        if (stat("data", &info) != 0) {
+            // data目录不存在，创建它
+            mkdir("data", 0755);
+        }
+        filepath = "data/graph_xy.csv";
+    }
+    std::ofstream out(filepath, std::ios::trunc);
     if (!out) return false;
     out << "kind,id,name,x,y,u,v\n";
     out.setf(std::ios::fixed);
@@ -419,7 +448,10 @@ bool loadGraphCSV_core(Graph& g, const std::string& file, bool isOldFormat) {
 
 bool loadGraphCSV(Graph& g) {
     // 优先新文件，其次兼容旧文件
+    // 先尝试data目录，再尝试当前目录
+    if (loadGraphCSV_core(g, getDataPath(FILE_NEW), false)) return true;
     if (loadGraphCSV_core(g, FILE_NEW, false)) return true;
+    if (loadGraphCSV_core(g, getDataPath(FILE_OLD), true)) return true;
     if (loadGraphCSV_core(g, FILE_OLD, true)) return true;
     return false;
 }

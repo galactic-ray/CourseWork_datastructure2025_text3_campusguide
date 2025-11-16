@@ -6,13 +6,13 @@ TARGET = CampusGuide
 TEMPLATE = app
 
 SOURCES += \
-    main.cpp \
-    graph.cpp \
-    mainwindow.cpp \
-    graphwidget.cpp
+    src/main_gui.cpp \
+    src/graph.cpp \
+    src/mainwindow.cpp \
+    src/graphwidget.cpp
 
 HEADERS += \
-    graph.h \
-    mainwindow.h \
-    graphwidget.h
+    src/graph.h \
+    src/mainwindow.h \
+    src/graphwidget.h
 

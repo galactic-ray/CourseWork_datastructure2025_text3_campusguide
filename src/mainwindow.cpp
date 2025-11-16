@@ -189,7 +189,7 @@ void MainWindow::onLoadSample() {
                 .arg(graph.names.size())
                 .arg(countEdges(graph)));
     if (saveGraphCSV(graph)) {
-        showMessage("已自动保存到 graph_xy.csv");
+        showMessage("已自动保存到 data/graph_xy.csv");
     }
 }
 

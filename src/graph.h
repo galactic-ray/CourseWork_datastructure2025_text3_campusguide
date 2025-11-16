@@ -44,7 +44,7 @@ std::pair<double, std::vector<int>> tspHeldKarp(const std::vector<std::vector<do
 std::pair<double, std::vector<int>> tspAuto(const std::vector<std::vector<double>>& D, int start, bool cycle);
 
 // CSV文件操作
-bool saveGraphCSV(const Graph& g, const std::string& file = "graph_xy.csv");
+bool saveGraphCSV(const Graph& g, const std::string& file = "");
 bool loadGraphCSV(Graph& g);
 bool loadGraphCSV_core(Graph& g, const std::string& file, bool isOldFormat);
 void loadSample(Graph& g);

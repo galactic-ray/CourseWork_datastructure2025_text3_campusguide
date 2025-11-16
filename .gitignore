@@ -1,12 +1,48 @@
-*
-!build.sh
-!graph.cpp        
-!graphwidget.h   
-!mainwindow.h         
-!CampusGuide.pro  
-!graph.h          
-!main.cpp          
-!README.md
-!CMakeLists.txt   
-!graphwidget.cpp  
-!mainwindow.cpp 
+# 编译输出
+build/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+
+# Qt相关
+*.pro.user
+*.pro.user.*
+*.qmlc
+*.jsc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.moc
+*.qm
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 可执行文件
+CampusGuide
+CampusGuide.exe
+
+# 临时文件
+*.tmp
+*.bak
+*.log
+
+*.csv
