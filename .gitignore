@@ -1,34 +1,12 @@
-# 可执行文件
-CampusGuide
-
-# 编译生成的目标文件
-*.o
-
-# Qt moc 生成的文件
-*.moc
-moc_*
-*.qrc.dep
-
-# CMake 生成的文件
-build/
-CMakeFiles/
-CMakeCache.txt
-Makefile
-cmake_install.cmake
-install_manifest.txt
-
-# 备份文件 & 临时文件
-*.bak
-*~
-*.tmp
-
-# Qt Creator 用户配置文件
-*.pro.user
-*.pro.user.*
-
-# VSCode 或 CLion IDE 文件（如果有）
-.vscode/
-.idea/
-
-# 自动生成的预编译文件
-moc_predefs.h
+*
+!build.sh
+!graph.cpp        
+!graphwidget.h   
+!mainwindow.h         
+!CampusGuide.pro  
+!graph.h          
+!main.cpp          
+!README.md
+!CMakeLists.txt   
+!graphwidget.cpp  
+!mainwindow.cpp 
