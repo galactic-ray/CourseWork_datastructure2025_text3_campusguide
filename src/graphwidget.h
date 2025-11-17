@@ -38,6 +38,7 @@ private:
     QRectF getBoundingBox() const;
     void drawVertex(QPainter& painter, int v, const QPointF& pos, bool isSelected = false);
     void drawEdge(QPainter& painter, int u, int v, const QPointF& posU, const QPointF& posV, bool highlight = false);
+    void drawAxes(QPainter& painter);
 };
 
 #endif // GRAPHWIDGET_H

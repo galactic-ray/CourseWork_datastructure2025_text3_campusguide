@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QDebug>
 #include <sstream>
 #include <iomanip>
 
@@ -8,15 +9,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setWindowTitle("校园导游咨询系统");
     setMinimumSize(1200, 800);
     
+    setupUI();
+    
     // 尝试加载已有数据
     if (loadGraphCSV(graph)) {
+        updateGraphDisplay();
         showMessage(QString("已自动加载 %1 个景点，%2 条道路")
                     .arg(graph.names.size())
                     .arg(countEdges(graph)));
+    } else {
+        updateGraphDisplay();
+        showMessage("未检测到 graph_xy.csv，当前为空图。");
     }
-    
-    setupUI();
-    updateGraphDisplay();
 }
 
 MainWindow::~MainWindow() {
@@ -56,6 +60,8 @@ void MainWindow::setupUI() {
     QVBoxLayout* vertexLayout = new QVBoxLayout(vertexGroup);
     editVertexName = new QLineEdit(this);
     editVertexName->setPlaceholderText("景点名称");
+    editVertexName->setAttribute(Qt::WA_InputMethodEnabled, true);
+    editVertexName->setInputMethodHints(Qt::ImhNoAutoUppercase | Qt::ImhNoPredictiveText | Qt::ImhPreferLowercase);
     editVertexX = new QLineEdit(this);
     editVertexX->setPlaceholderText("X坐标(米)");
     editVertexY = new QLineEdit(this);
@@ -178,8 +184,12 @@ void MainWindow::updateGraphDisplay() {
 }
 
 void MainWindow::showMessage(const QString& msg) {
-    textOutput->append(msg);
-    textOutput->moveCursor(QTextCursor::End);
+    if (textOutput) {
+        textOutput->append(msg);
+        textOutput->moveCursor(QTextCursor::End);
+    } else {
+        qDebug() << msg;
+    }
 }
 
 void MainWindow::onLoadSample() {
@@ -209,7 +219,8 @@ void MainWindow::onAddVertex() {
         return;
     }
     
-    int id = graph.addVertex(name.toStdString(), x, y);
+    std::string utf8Name = name.toUtf8().constData();
+    int id = graph.addVertex(utf8Name, x, y);
     updateGraphDisplay();
     showMessage(QString("已添加景点：%1 (编号 %2) @(%3, %4)")
                 .arg(name).arg(id).arg(x, 0, 'f', 2).arg(y, 0, 'f', 2));
@@ -246,8 +257,8 @@ void MainWindow::onAddEdge() {
     double w = Graph::dist(graph.coord[u], graph.coord[v]);
     updateGraphDisplay();
     showMessage(QString("已添加道路：%1 - %2，距离 %3 米")
-                .arg(QString::fromStdString(graph.names[u]))
-                .arg(QString::fromStdString(graph.names[v]))
+                .arg(QString::fromUtf8(graph.names[u].c_str()))
+                .arg(QString::fromUtf8(graph.names[v].c_str()))
                 .arg(w, 0, 'f', 2));
     
     if (saveGraphCSV(graph)) {
@@ -281,7 +292,7 @@ void MainWindow::onQueryShortestPath() {
         QString pathStr;
         for (size_t i = 0; i < path.size(); ++i) {
             if (i > 0) pathStr += " → ";
-            pathStr += QString::fromStdString(graph.names[path[i]]);
+            pathStr += QString::fromUtf8(graph.names[path[i]].c_str());
         }
         showMessage(QString("最短距离: %1 米\n路径: %2")
                     .arg(d, 0, 'f', 2)
@@ -315,10 +326,10 @@ void MainWindow::onTSPTour() {
         QString tourStr;
         for (size_t i = 0; i < tour.size(); ++i) {
             if (i > 0) tourStr += " → ";
-            tourStr += QString::fromStdString(graph.names[tour[i]]);
+            tourStr += QString::fromUtf8(graph.names[tour[i]].c_str());
         }
         if (cycle && tour.size() >= 2) {
-            tourStr += " → " + QString::fromStdString(graph.names[tour.front()]);
+            tourStr += " → " + QString::fromUtf8(graph.names[tour.front()].c_str());
         }
         showMessage(QString("%1: %2 米\n路径: %3")
                     .arg(cycle ? "总距离(回路)" : "总距离")
@@ -381,7 +392,7 @@ void MainWindow::onModifyVertex() {
     graph.recomputeAllEdgeWeights();
     updateGraphDisplay();
     showMessage(QString("已更新景点 %1 的坐标为 (%2, %3)，相关边权已重算")
-                .arg(QString::fromStdString(graph.names[u]))
+                .arg(QString::fromUtf8(graph.names[u].c_str()))
                 .arg(x, 0, 'f', 2)
                 .arg(y, 0, 'f', 2));
     
@@ -395,13 +406,18 @@ void MainWindow::onModifyVertex() {
 
 void MainWindow::onVertexClicked(int vertexId) {
     graphWidget->setSelectedVertex(vertexId);
-    showMessage(QString("点击了景点: %1 (编号 %2)")
-                .arg(QString::fromStdString(graph.names[vertexId]))
-                .arg(vertexId));
+    const Pt& coord = graph.coord[vertexId];
+    showMessage(QString("点击了景点: %1 (编号 %2) @(%3, %4)")
+                .arg(QString::fromUtf8(graph.names[vertexId].c_str()))
+                .arg(vertexId)
+                .arg(coord.x, 0, 'f', 2)
+                .arg(coord.y, 0, 'f', 2));
     spinPathStart->setValue(vertexId);
     spinPathEnd->setValue(vertexId);
     spinTSPStart->setValue(vertexId);
     spinModifyVertex->setValue(vertexId);
+    editModifyX->setText(QString::number(coord.x, 'f', 2));
+    editModifyY->setText(QString::number(coord.y, 'f', 2));
 }
 
 void MainWindow::onClearPaths() {

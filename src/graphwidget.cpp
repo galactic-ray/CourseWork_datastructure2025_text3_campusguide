@@ -69,6 +69,11 @@ QRectF GraphWidget::getBoundingBox() const {
         minY = std::min(minY, pt.y);
         maxY = std::max(maxY, pt.y);
     }
+    // 包含原点，便于显示坐标轴
+    minX = std::min(minX, 0.0);
+    maxX = std::max(maxX, 0.0);
+    minY = std::min(minY, 0.0);
+    maxY = std::max(maxY, 0.0);
     
     double padding = 20;
     return QRectF(minX - padding, minY - padding, maxX - minX + 2 * padding, maxY - minY + 2 * padding);
@@ -79,8 +84,9 @@ QPointF GraphWidget::worldToScreen(const Pt& pt) const {
     double scaleX = (width() - 80) / (bbox.width() > 0 ? bbox.width() : 1);
     double scaleY = (height() - 80) / (bbox.height() > 0 ? bbox.height() : 1);
     double scale = std::min(scaleX, scaleY);
-    QPointF offset(40 - bbox.left() * scale, 40 - bbox.top() * scale);
-    return QPointF(pt.x * scale + offset.x(), pt.y * scale + offset.y());
+    double offsetX = 40 - bbox.left() * scale;
+    double offsetY = 40 + bbox.bottom() * scale;
+    return QPointF(pt.x * scale + offsetX, offsetY - pt.y * scale);
 }
 
 Pt GraphWidget::screenToWorld(const QPointF& pt) const {
@@ -88,8 +94,9 @@ Pt GraphWidget::screenToWorld(const QPointF& pt) const {
     double scaleX = (width() - 80) / (bbox.width() > 0 ? bbox.width() : 1);
     double scaleY = (height() - 80) / (bbox.height() > 0 ? bbox.height() : 1);
     double scale = std::min(scaleX, scaleY);
-    QPointF offset(40 - bbox.left() * scale, 40 - bbox.top() * scale);
-    return Pt{(pt.x() - offset.x()) / scale, (pt.y() - offset.y()) / scale};
+    double offsetX = 40 - bbox.left() * scale;
+    double offsetY = 40 + bbox.bottom() * scale;
+    return Pt{(pt.x() - offsetX) / scale, (offsetY - pt.y()) / scale};
 }
 
 void GraphWidget::drawVertex(QPainter& painter, int v, const QPointF& pos, bool isSelected) {
@@ -101,9 +108,12 @@ void GraphWidget::drawVertex(QPainter& painter, int v, const QPointF& pos, bool 
     painter.drawEllipse(pos, 15, 15);
     
     painter.setPen(Qt::black);
-    painter.setFont(QFont("Arial", 9, QFont::Bold));
+    QFont font = painter.font();
+    font.setPointSize(9);
+    font.setBold(true);
+    painter.setFont(font);
     QRectF textRect(pos.x() - 30, pos.y() - 35, 60, 20);
-    QString text = QString::fromStdString(graph->names[v]);
+    QString text = QString::fromUtf8(graph->names[v].c_str());
     painter.drawText(textRect, Qt::AlignCenter, text);
 }
 
@@ -131,6 +141,33 @@ void GraphWidget::drawEdge(QPainter& painter, int u, int v, const QPointF& posU,
     }
 }
 
+void GraphWidget::drawAxes(QPainter& painter) {
+    if (!graph || graph->names.empty()) return;
+    QRectF bbox = getBoundingBox();
+    painter.save();
+    QPen axisPen(QColor(160, 160, 160), 1, Qt::DashLine);
+    painter.setPen(axisPen);
+    QFont font = painter.font();
+    font.setPointSize(8);
+    painter.setFont(font);
+    
+    // X轴
+    if (bbox.top() <= 0 && bbox.bottom() >= 0) {
+        QPointF start = worldToScreen(Pt{bbox.left(), 0});
+        QPointF end = worldToScreen(Pt{bbox.right(), 0});
+        painter.drawLine(start, end);
+        painter.drawText(end + QPointF(-10, -5), "X");
+    }
+    // Y轴
+    if (bbox.left() <= 0 && bbox.right() >= 0) {
+        QPointF start = worldToScreen(Pt{0, bbox.top()});
+        QPointF end = worldToScreen(Pt{0, bbox.bottom()});
+        painter.drawLine(start, end);
+        painter.drawText(start + QPointF(5, -400), "Y");
+    }
+    painter.restore();
+}
+
 void GraphWidget::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     
@@ -146,6 +183,8 @@ void GraphWidget::paintEvent(QPaintEvent* event) {
         painter.drawText(rect(), Qt::AlignCenter, "请加载或创建校园图");
         return;
     }
+    
+    drawAxes(painter);
     
     // 绘制所有边
     for (size_t u = 0; u < graph->adj.size(); ++u) {
@@ -193,7 +232,7 @@ void GraphWidget::paintEvent(QPaintEvent* event) {
     // 绘制所有顶点
     for (size_t i = 0; i < graph->names.size(); ++i) {
         QPointF pos = worldToScreen(graph->coord[i]);
-        drawVertex(painter, i, pos, i == selectedVertex);
+        drawVertex(painter, static_cast<int>(i), pos, static_cast<int>(i) == selectedVertex);
     }
 }
 
