@@ -63,6 +63,37 @@ void Graph::recomputeAllEdgeWeights() {
     }
 }
 
+bool Graph::renameVertex(int idx, const std::string& newName) {
+    if (idx < 0 || idx >= (int)names.size()) return false;
+    if (newName.empty()) return false;
+    auto it = id.find(newName);
+    if (it != id.end() && it->second != idx) return false;
+    id.erase(names[idx]);
+    names[idx] = newName;
+    id[newName] = idx;
+    return true;
+}
+
+bool Graph::removeVertex(int idx) {
+    if (idx < 0 || idx >= (int)names.size()) return false;
+    names.erase(names.begin() + idx);
+    coord.erase(coord.begin() + idx);
+    adj.erase(adj.begin() + idx);
+    for (auto& edges : adj) {
+        edges.erase(std::remove_if(edges.begin(), edges.end(),
+                                   [&](const Edge& e) { return e.to == idx; }),
+                    edges.end());
+        for (auto& e : edges) {
+            if (e.to > idx) --e.to;
+        }
+    }
+    id.clear();
+    for (size_t i = 0; i < names.size(); ++i) {
+        id[names[i]] = static_cast<int>(i);
+    }
+    return true;
+}
+
 std::pair<double, std::vector<int>> Graph::dijkstra(int src, int dst) const {
     int n = (int)adj.size();
     std::vector<double> distv(n, INF);

@@ -155,10 +155,42 @@ void MainWindow::setupUI() {
     textOutput->setMaximumHeight(150);
     outputLayout->addWidget(textOutput);
     
+    // 景点改名
+    QGroupBox* renameGroup = new QGroupBox("景点改名", this);
+    QVBoxLayout* renameLayout = new QVBoxLayout(renameGroup);
+    spinRenameVertex = new QSpinBox(this);
+    spinRenameVertex->setMinimum(0);
+    spinRenameVertex->setMaximum(100);
+    editRenameName = new QLineEdit(this);
+    editRenameName->setPlaceholderText("新名称（支持中文）");
+    editRenameName->setAttribute(Qt::WA_InputMethodEnabled, true);
+    editRenameName->setInputMethodHints(Qt::ImhNoAutoUppercase | Qt::ImhNoPredictiveText | Qt::ImhPreferLowercase);
+    btnRenameVertex = new QPushButton("修改名称", this);
+    renameLayout->addWidget(new QLabel("景点编号:"));
+    renameLayout->addWidget(spinRenameVertex);
+    renameLayout->addWidget(new QLabel("新名称:"));
+    renameLayout->addWidget(editRenameName);
+    renameLayout->addWidget(btnRenameVertex);
+    connect(btnRenameVertex, &QPushButton::clicked, this, &MainWindow::onRenameVertex);
+    
+    // 删除景点
+    QGroupBox* deleteGroup = new QGroupBox("删除景点", this);
+    QVBoxLayout* deleteLayout = new QVBoxLayout(deleteGroup);
+    spinDeleteVertex = new QSpinBox(this);
+    spinDeleteVertex->setMinimum(0);
+    spinDeleteVertex->setMaximum(100);
+    btnDeleteVertex = new QPushButton("删除景点", this);
+    deleteLayout->addWidget(new QLabel("景点编号:"));
+    deleteLayout->addWidget(spinDeleteVertex);
+    deleteLayout->addWidget(btnDeleteVertex);
+    connect(btnDeleteVertex, &QPushButton::clicked, this, &MainWindow::onDeleteVertex);
+    
     // 组装控制面板
     controlLayout->addWidget(fileGroup);
     controlLayout->addWidget(vertexGroup);
     controlLayout->addWidget(modifyGroup);
+    controlLayout->addWidget(renameGroup);
+    controlLayout->addWidget(deleteGroup);
     controlLayout->addWidget(edgeGroup);
     controlLayout->addWidget(pathGroup);
     controlLayout->addWidget(tspGroup);
@@ -175,12 +207,19 @@ void MainWindow::updateGraphDisplay() {
     
     // 更新SpinBox的最大值
     int maxId = std::max(0, (int)graph.names.size() - 1);
-    spinEdgeU->setMaximum(maxId);
-    spinEdgeV->setMaximum(maxId);
-    spinPathStart->setMaximum(maxId);
-    spinPathEnd->setMaximum(maxId);
-    spinTSPStart->setMaximum(maxId);
-    spinModifyVertex->setMaximum(maxId);
+    
+    auto updateSpinRange = [&](QSpinBox* spin) {
+        spin->setMaximum(maxId);
+        if (spin->value() > maxId) spin->setValue(maxId);
+    };
+    updateSpinRange(spinEdgeU);
+    updateSpinRange(spinEdgeV);
+    updateSpinRange(spinPathStart);
+    updateSpinRange(spinPathEnd);
+    updateSpinRange(spinTSPStart);
+    updateSpinRange(spinModifyVertex);
+    updateSpinRange(spinRenameVertex);
+    updateSpinRange(spinDeleteVertex);
 }
 
 void MainWindow::showMessage(const QString& msg) {
@@ -404,6 +443,63 @@ void MainWindow::onModifyVertex() {
     }
 }
 
+void MainWindow::onRenameVertex() {
+    if (graph.names.empty()) {
+        QMessageBox::warning(this, "错误", "当前没有可修改的景点");
+        return;
+    }
+    int idx = spinRenameVertex->value();
+    if (idx < 0 || idx >= (int)graph.names.size()) {
+        QMessageBox::warning(this, "错误", "编号不合法");
+        return;
+    }
+    QString newName = editRenameName->text().trimmed();
+    if (newName.isEmpty()) {
+        QMessageBox::warning(this, "错误", "请输入新名称");
+        return;
+    }
+    std::string utf8Name = newName.toUtf8().constData();
+    if (!graph.renameVertex(idx, utf8Name)) {
+        QMessageBox::warning(this, "错误", "名称已存在或不合法");
+        return;
+    }
+    updateGraphDisplay();
+    showMessage(QString("景点 %1 已更名为 %2")
+                .arg(idx)
+                .arg(newName));
+    editRenameName->clear();
+    if (saveGraphCSV(graph)) {
+        showMessage("已自动保存");
+    }
+}
+
+void MainWindow::onDeleteVertex() {
+    if (graph.names.empty()) {
+        QMessageBox::warning(this, "错误", "当前没有可删除的景点");
+        return;
+    }
+    int idx = spinDeleteVertex->value();
+    if (idx < 0 || idx >= (int)graph.names.size()) {
+        QMessageBox::warning(this, "错误", "编号不合法");
+        return;
+    }
+    QString name = QString::fromUtf8(graph.names[idx].c_str());
+    if (!graph.removeVertex(idx)) {
+        QMessageBox::warning(this, "错误", "删除失败");
+        return;
+    }
+    graphWidget->clearPaths();
+    graphWidget->setSelectedVertex(-1);
+    editRenameName->clear();
+    editModifyX->clear();
+    editModifyY->clear();
+    updateGraphDisplay();
+    showMessage(QString("已删除景点：%1 (原编号 %2)").arg(name).arg(idx));
+    if (saveGraphCSV(graph)) {
+        showMessage("已自动保存");
+    }
+}
+
 void MainWindow::onVertexClicked(int vertexId) {
     graphWidget->setSelectedVertex(vertexId);
     const Pt& coord = graph.coord[vertexId];
@@ -418,6 +514,9 @@ void MainWindow::onVertexClicked(int vertexId) {
     spinModifyVertex->setValue(vertexId);
     editModifyX->setText(QString::number(coord.x, 'f', 2));
     editModifyY->setText(QString::number(coord.y, 'f', 2));
+    spinRenameVertex->setValue(vertexId);
+    editRenameName->setText(QString::fromUtf8(graph.names[vertexId].c_str()));
+    spinDeleteVertex->setValue(vertexId);
 }
 
 void MainWindow::onClearPaths() {

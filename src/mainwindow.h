@@ -32,6 +32,8 @@ private slots:
     void onSaveGraph();
     void onLoadGraph();
     void onModifyVertex();
+    void onRenameVertex();
+    void onDeleteVertex();
     void onVertexClicked(int vertexId);
     void onClearPaths();
 
@@ -52,6 +54,8 @@ private:
     QPushButton* btnSave;
     QPushButton* btnLoad;
     QPushButton* btnModifyVertex;
+    QPushButton* btnRenameVertex;
+    QPushButton* btnDeleteVertex;
     QPushButton* btnClearPaths;
     
     QLineEdit* editVertexName;
@@ -66,6 +70,9 @@ private:
     QSpinBox* spinModifyVertex;
     QLineEdit* editModifyX;
     QLineEdit* editModifyY;
+    QSpinBox* spinRenameVertex;
+    QLineEdit* editRenameName;
+    QSpinBox* spinDeleteVertex;
     
     QTextEdit* textOutput;
 };

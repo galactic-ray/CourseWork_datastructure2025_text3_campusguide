@@ -31,6 +31,8 @@ public:
     void ensureVertex(int v);
     void addUndirectedEdgeById(int u, int v);
     void recomputeAllEdgeWeights();
+    bool renameVertex(int idx, const std::string& newName);
+    bool removeVertex(int idx);
     std::pair<double, std::vector<int>> dijkstra(int src, int dst) const;
     std::vector<int> rebuildPath(int src, int dst, const std::vector<int>& parent) const;
     std::vector<std::vector<double>> allPairsShortest() const;
