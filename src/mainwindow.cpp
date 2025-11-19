@@ -361,19 +361,63 @@ void MainWindow::onTSPTour() {
         showMessage("图不连通，无法覆盖全部景点");
         graphWidget->clearPaths();
     } else {
-        graphWidget->setTSPTour(tour, cycle);
-        QString tourStr;
+        std::vector<int> expandedPath;
+        auto appendSegment = [&](int from, int to) -> bool {
+            if (from == to) {
+                if (expandedPath.empty() || expandedPath.back() != from) {
+                    expandedPath.push_back(from);
+                }
+                return true;
+            }
+            auto resSingle = graph.dijkstra(from, to);
+            if (resSingle.first >= Graph::INF / 2) return false;
+            auto seg = graph.rebuildPath(from, to, resSingle.second);
+            if (seg.empty()) return false;
+            if (expandedPath.empty()) {
+                expandedPath.insert(expandedPath.end(), seg.begin(), seg.end());
+            } else {
+                expandedPath.insert(expandedPath.end(), seg.begin() + 1, seg.end());
+            }
+            return true;
+        };
+        bool ok = true;
+        if (tour.empty()) {
+            expandedPath.push_back(s);
+        } else {
+            for (size_t i = 0; i + 1 < tour.size(); ++i) {
+                ok &= appendSegment(tour[i], tour[i + 1]);
+            }
+            if (cycle && tour.size() >= 2) {
+                ok &= appendSegment(tour.back(), tour.front());
+            }
+        }
+        if (!ok || expandedPath.size() < tour.size()) {
+            showMessage("图存在不可达的道路，无法生成完整路径");
+            graphWidget->clearPaths();
+            return;
+        }
+        graphWidget->setTSPTour(expandedPath, false);
+        
+        QString visitOrder;
         for (size_t i = 0; i < tour.size(); ++i) {
-            if (i > 0) tourStr += " → ";
-            tourStr += QString::fromUtf8(graph.names[tour[i]].c_str());
+            if (i > 0) visitOrder += " → ";
+            visitOrder += QString::fromUtf8(graph.names[tour[i]].c_str());
         }
-        if (cycle && tour.size() >= 2) {
-            tourStr += " → " + QString::fromUtf8(graph.names[tour.front()].c_str());
+        if (cycle && !tour.empty()) {
+            visitOrder += " → " + QString::fromUtf8(graph.names[tour.front()].c_str());
         }
-        showMessage(QString("%1: %2 米\n路径: %3")
+        
+        QString actualPath;
+        for (size_t i = 0; i < expandedPath.size(); ++i) {
+            if (i > 0) actualPath += " → ";
+            actualPath += QString::fromUtf8(graph.names[expandedPath[i]].c_str());
+        }
+        
+        showMessage(QString("%1: %2 米\n访问顺序: %3\n实际路径: %4")
                     .arg(cycle ? "总距离(回路)" : "总距离")
                     .arg(cost, 0, 'f', 2)
-                    .arg(tourStr));
+                    .arg(visitOrder.isEmpty() ? "(无)" : visitOrder)
+                    .arg(actualPath));
     }
 }
 

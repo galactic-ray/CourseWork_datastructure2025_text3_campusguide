@@ -156,14 +156,14 @@ void GraphWidget::drawAxes(QPainter& painter) {
         QPointF start = worldToScreen(Pt{bbox.left(), 0});
         QPointF end = worldToScreen(Pt{bbox.right(), 0});
         painter.drawLine(start, end);
-        painter.drawText(end + QPointF(-10, -5), "X");
+        // painter.drawText(end + QPointF(-10, -5), "X");
     }
     // Y轴
     if (bbox.left() <= 0 && bbox.right() >= 0) {
         QPointF start = worldToScreen(Pt{0, bbox.top()});
         QPointF end = worldToScreen(Pt{0, bbox.bottom()});
         painter.drawLine(start, end);
-        painter.drawText(start + QPointF(5, -400), "Y");
+        // painter.drawText(start + QPointF(5, -600), "Y");
     }
     painter.restore();
 }
